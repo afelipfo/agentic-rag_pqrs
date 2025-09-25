@@ -203,7 +203,7 @@ const LandingPage = ({ onEnterDashboard }: LandingPageProps) => {
                   <p className="text-sm text-gray-600 mb-4">
                     {action.description}
                   </p>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full" onClick={action.action}>
                     Acceder
                     <ArrowRight className="ml-2 h-3 w-3" />
                   </Button>
