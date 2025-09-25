@@ -225,22 +225,32 @@ const ChatWidget = () => {
                 </Button>
               </div>
 
-              {/* Quick suggestions */}
-              <div className="flex flex-wrap gap-1 mt-2">
-                {[
-                  '¿Cómo buscar PQRS?',
-                  'Asignar personal',
-                  'Ver métricas'
-                ].map((suggestion) => (
+              {/* Sugerencias de Consultas Frecuentes */}
+              <div className="mt-2 space-y-1">
+                <div className="text-xs text-gray-500 mb-2">Sugerencias frecuentes:</div>
+                <div className="grid grid-cols-1 gap-1">
                   <button
-                    key={suggestion}
-                    onClick={() => setInputMessage(suggestion)}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-gray-600"
+                    onClick={() => setInputMessage('¿Cuántos PQRS activos hay en Comuna 1?')}
+                    className="text-xs bg-blue-50 hover:bg-blue-100 px-2 py-2 rounded text-left text-blue-700 border border-blue-200"
                     disabled={loading}
                   >
-                    {suggestion}
+                    📊 ¿Cuántos PQRS activos hay en Comuna 1?
                   </button>
-                ))}
+                  <button
+                    onClick={() => setInputMessage('Asignar personal para zona Centro')}
+                    className="text-xs bg-green-50 hover:bg-green-100 px-2 py-2 rounded text-left text-green-700 border border-green-200"
+                    disabled={loading}
+                  >
+                    👥 Asignar personal para zona Centro
+                  </button>
+                  <button
+                    onClick={() => setInputMessage('Buscar PQRS sobre infraestructura vial')}
+                    className="text-xs bg-purple-50 hover:bg-purple-100 px-2 py-2 rounded text-left text-purple-700 border border-purple-200"
+                    disabled={loading}
+                  >
+                    🛣️ Buscar PQRS sobre infraestructura vial
+                  </button>
+                </div>
               </div>
             </div>
           </>

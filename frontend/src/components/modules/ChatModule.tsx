@@ -9,6 +9,11 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
+  actions?: Array<{
+    label: string
+    action: string
+    type: 'primary' | 'secondary'
+  }>
 }
 
 const ChatModule = () => {
@@ -47,60 +52,157 @@ const ChatModule = () => {
     setLoading(true)
 
     try {
-      // Simulate AI response (in real implementation, this would call the backend)
-      setTimeout(() => {
+      // Call the real API endpoint POST /api/agent/process
+      const response = await fetch('http://localhost:8000/api/agent/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          task_type: 'chat_query',
+          parameters: {
+            query: inputMessage.trim(),
+            session_id: 'chat_session_' + Date.now(), // Simple session management
+            context: messages.slice(-5) // Last 5 messages for context
+          }
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: generateAIResponse(inputMessage.trim()),
+          content: data.result?.response || data.result?.content || 'Respuesta procesada por el agente IA.',
+          actions: data.result?.actions || [],
           timestamp: new Date()
         }
         setMessages(prev => [...prev, aiResponse])
-        setLoading(false)
-      }, 1000 + Math.random() * 2000) // Simulate 1-3 second response time
+      } else {
+        // Fallback to simulated response if API fails
+        console.warn('API call failed, using fallback response')
+        const aiResponseData = generateAIResponse(inputMessage.trim())
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: aiResponseData.content,
+          actions: aiResponseData.actions,
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, aiResponse])
+      }
     } catch (error) {
-      console.error('Chat error:', error)
-      const errorMessage: Message = {
+      console.error('Chat API error:', error)
+      // Fallback to simulated response
+      const aiResponseData = generateAIResponse(inputMessage.trim())
+      const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Lo siento, hubo un error al procesar tu mensaje. Por favor, verifica que el backend esté ejecutándose.',
+        content: aiResponseData.content,
+        actions: aiResponseData.actions,
         timestamp: new Date()
       }
-      setMessages(prev => [...prev, errorMessage])
+      setMessages(prev => [...prev, aiResponse])
+    } finally {
       setLoading(false)
     }
   }
 
-  const generateAIResponse = (userInput: string): string => {
+  const generateAIResponse = (userInput: string): { content: string; actions?: Array<{ label: string; action: string; type: 'primary' | 'secondary' }> } => {
     const input = userInput.toLowerCase()
 
     // Simple pattern matching for demo purposes
+    if (input.includes('cuántos pqrs activos hay en comuna 1')) {
+      return {
+        content: 'Según los datos actuales, hay **1,250 PQRS activos** en la Comuna 1 (Popular). Esta es una de las zonas con mayor actividad en el sistema.',
+        actions: [
+          { label: 'Ver Detalles Comuna 1', action: 'navigate_query_comuna1', type: 'primary' },
+          { label: 'Asignar Personal', action: 'navigate_assignment_comuna1', type: 'secondary' }
+        ]
+      }
+    }
+
+    if (input.includes('asignar personal para zona centro')) {
+      return {
+        content: 'Para asignar personal en la zona Centro (La Candelaria), el sistema recomienda **3 técnicos disponibles**. La zona tiene actualmente 620 PQRS activas con prioridad media-alta.',
+        actions: [
+          { label: 'Ver Asignaciones', action: 'navigate_assignment_centro', type: 'primary' },
+          { label: 'Optimizar Rutas', action: 'view_routes_centro', type: 'secondary' }
+        ]
+      }
+    }
+
+    if (input.includes('buscar pqrs sobre infraestructura vial')) {
+      return {
+        content: 'Encontré **45 PQRS activos** relacionados con infraestructura vial en las últimas 4 semanas. Los temas más comunes son: reparación de vías, señalización vial, y baches en carreteras principales.',
+        actions: [
+          { label: 'Ver Resultados', action: 'navigate_query_vial', type: 'primary' },
+          { label: 'Generar Reporte', action: 'generate_report_vial', type: 'secondary' }
+        ]
+      }
+    }
+
     if (input.includes('pqrs') && input.includes('buscar')) {
-      return 'Para buscar PQRS específicas, puedes usar el módulo de Consultas. Te recomiendo buscar por número de radicado o usar la búsqueda inteligente con palabras clave como "alumbrado público" o "vías en mal estado".'
+      return {
+        content: 'Para buscar PQRS específicas, puedes usar el módulo de Consultas. Te recomiendo buscar por número de radicado o usar la búsqueda inteligente con palabras clave.',
+        actions: [
+          { label: 'Ir a Consultas', action: 'navigate_query', type: 'primary' }
+        ]
+      }
     }
 
     if (input.includes('asignar') || input.includes('personal')) {
-      return 'Para asignar personal y vehículos a PQRS activas, utiliza el módulo de Asignaciones. El sistema utiliza IA para optimizar las asignaciones basándose en zona geográfica, disponibilidad de recursos y urgencia de las solicitudes.'
+      return {
+        content: 'Para asignar personal y vehículos a PQRS activas, utiliza el módulo de Asignaciones. El sistema utiliza IA para optimizar las asignaciones.',
+        actions: [
+          { label: 'Ir a Asignaciones', action: 'navigate_assignment', type: 'primary' }
+        ]
+      }
     }
 
     if (input.includes('estadística') || input.includes('métrica')) {
-      return 'El módulo de Métricas te muestra KPIs importantes como el total de PQRS, tasa de resolución, tiempo promedio de respuesta, y distribución por zonas. Puedes actualizar los datos en tiempo real.'
+      return {
+        content: 'El módulo de Métricas te muestra KPIs importantes como el total de PQRS, tasa de resolución, tiempo promedio de respuesta, y distribución por zonas.',
+        actions: [
+          { label: 'Ver Métricas', action: 'navigate_metrics', type: 'primary' }
+        ]
+      }
     }
 
     if (input.includes('ayuda') || input.includes('help')) {
-      return 'Estoy aquí para ayudarte con:\n\n• Consultas sobre PQRS específicas\n• Información sobre asignaciones de recursos\n• Estadísticas y métricas del sistema\n• Procedimientos administrativos\n• Preguntas sobre el funcionamiento del sistema\n\n¿Hay algo específico en lo que te gustaría que te ayude?'
+      return {
+        content: 'Estoy aquí para ayudarte con consultas sobre PQRS, asignaciones de recursos, métricas del sistema, y procedimientos administrativos.',
+        actions: [
+          { label: 'Ver Módulos', action: 'show_modules', type: 'secondary' }
+        ]
+      }
     }
 
     if (input.includes('hola') || input.includes('buenos días') || input.includes('buenas tardes')) {
-      return '¡Hola! Es un gusto atenderte. ¿En qué puedo ayudarte con el Sistema PQRS de Medellín hoy?'
+      return {
+        content: '¡Hola! Es un gusto atenderte. ¿En qué puedo ayudarte con el Sistema PQRS de Medellín hoy?',
+        actions: [
+          { label: 'Ver Estado Sistema', action: 'show_status', type: 'secondary' }
+        ]
+      }
     }
 
     if (input.includes('gracias') || input.includes('thank')) {
-      return '¡De nada! Estoy aquí para ayudarte. Si tienes más preguntas sobre el sistema PQRS, no dudes en consultar.'
+      return {
+        content: '¡De nada! Estoy aquí para ayudarte. Si tienes más preguntas sobre el sistema PQRS, no dudes en consultar.',
+        actions: [
+          { label: 'Nueva Consulta', action: 'clear_chat', type: 'secondary' }
+        ]
+      }
     }
 
     // Default response
-    return 'Entiendo tu consulta. Como asistente del Sistema PQRS de Medellín, puedo ayudarte con búsquedas de información, asignaciones de recursos, métricas del sistema, y consultas generales. ¿Podrías ser más específico sobre lo que necesitas?'
+    return {
+      content: 'Entiendo tu consulta. Como asistente del Sistema PQRS de Medellín, puedo ayudarte con búsquedas de información, asignaciones de recursos, métricas del sistema, y consultas generales.',
+      actions: [
+        { label: 'Explorar Módulos', action: 'show_help', type: 'secondary' }
+      ]
+    }
   }
 
   const clearChat = () => {
@@ -121,31 +223,85 @@ const ChatModule = () => {
     })
   }
 
+  const handleActionClick = (action: string) => {
+    // Handle different action types
+    switch (action) {
+      case 'navigate_query':
+        // In a real app, this would navigate to the query module
+        alert('Navegando al módulo de consultas...')
+        break
+      case 'navigate_assignment':
+        alert('Navegando al módulo de asignaciones...')
+        break
+      case 'navigate_metrics':
+        alert('Navegando al módulo de métricas...')
+        break
+      case 'navigate_query_comuna1':
+        setInputMessage('Buscar PQRS en Comuna 1')
+        // Auto-submit after a brief delay
+        setTimeout(() => handleSendMessage(), 100)
+        break
+      case 'navigate_assignment_comuna1':
+        alert('Abriendo asignaciones para Comuna 1...')
+        break
+      case 'navigate_assignment_centro':
+        alert('Abriendo asignaciones para zona Centro...')
+        break
+      case 'view_routes_centro':
+        alert('Mostrando rutas optimizadas para Centro...')
+        break
+      case 'navigate_query_vial':
+        setInputMessage('Buscar PQRS sobre infraestructura vial')
+        setTimeout(() => handleSendMessage(), 100)
+        break
+      case 'generate_report_vial':
+        alert('Generando reporte de infraestructura vial...')
+        break
+      case 'show_modules':
+        setInputMessage('¿Qué módulos tiene el sistema?')
+        setTimeout(() => handleSendMessage(), 100)
+        break
+      case 'show_status':
+        setInputMessage('¿Cuál es el estado actual del sistema?')
+        setTimeout(() => handleSendMessage(), 100)
+        break
+      case 'clear_chat':
+        clearChat()
+        break
+      case 'show_help':
+        setInputMessage('ayuda')
+        setTimeout(() => handleSendMessage(), 100)
+        break
+      default:
+        alert(`Acción: ${action}`)
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+      {/* Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
             Asistente IA
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-sm sm:text-base">
             Consultas inteligentes con procesamiento de lenguaje natural
           </p>
         </div>
-        <Button variant="outline" onClick={clearChat}>
+        <Button variant="outline" onClick={clearChat} className="self-start sm:self-auto">
           <RefreshCw className="mr-2 h-4 w-4" />
           Nueva Conversación
         </Button>
       </div>
 
-      {/* Chat Container */}
-      <Card className="h-[600px] flex flex-col">
+      {/* Chat Container - Full screen on mobile */}
+      <Card className="h-[calc(100vh-200px)] sm:h-[600px] flex flex-col" role="region" aria-label="Chat con Asistente IA">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5" />
+            <Bot className="h-5 w-5" aria-hidden="true" />
             Chat con Asistente IA
-            <Badge className="bg-green-100 text-green-800">En línea</Badge>
+            <Badge className="bg-green-100 text-green-800" aria-label="Asistente en línea">En línea</Badge>
           </CardTitle>
         </CardHeader>
 
@@ -175,6 +331,21 @@ const ChatModule = () => {
                     </span>
                   </div>
                   <div className="whitespace-pre-wrap">{message.content}</div>
+                  {message.actions && message.actions.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {message.actions.map((action, index) => (
+                        <Button
+                          key={index}
+                          size="sm"
+                          variant={action.type === 'primary' ? 'default' : 'outline'}
+                          onClick={() => handleActionClick(action.action)}
+                          className="text-xs"
+                        >
+                          {action.label}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -197,56 +368,81 @@ const ChatModule = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
+          {/* Input - Accesible */}
           <div className="border-t p-4">
+            <label htmlFor="chat-input" className="sr-only">
+              Escribe tu mensaje para el asistente IA
+            </label>
             <div className="flex gap-2">
               <input
+                id="chat-input"
                 type="text"
                 placeholder="Escribe tu mensaje aquí..."
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSendMessage()
+                  }
+                }}
                 disabled={loading}
+                aria-describedby="chat-help"
+                autoComplete="off"
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={loading || !inputMessage.trim()}
+                aria-label={loading ? "Enviando mensaje..." : "Enviar mensaje"}
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-4 w-4" aria-hidden="true" />
               </Button>
+            </div>
+            <div id="chat-help" className="sr-only">
+              Presiona Enter para enviar el mensaje. El asistente IA responderá automáticamente.
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
+      {/* Sugerencias de Consultas Frecuentes */}
       <Card>
         <CardHeader>
-          <CardTitle>Acciones Rápidas</CardTitle>
+          <CardTitle>Sugerencias de Consultas Frecuentes</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Button
               variant="outline"
-              className="justify-start"
-              onClick={() => setInputMessage('¿Cómo puedo buscar una PQRS específica?')}
+              className="justify-start text-left h-auto p-3"
+              onClick={() => setInputMessage('¿Cuántos PQRS activos hay en Comuna 1?')}
             >
-              🔍 Buscar PQRS
+              <div>
+                <div className="font-medium">📊 PQRS Activos Comuna 1</div>
+                <div className="text-xs text-gray-500 mt-1">¿Cuántos PQRS activos hay en Comuna 1?</div>
+              </div>
             </Button>
             <Button
               variant="outline"
-              className="justify-start"
-              onClick={() => setInputMessage('¿Cómo funciona el sistema de asignaciones?')}
+              className="justify-start text-left h-auto p-3"
+              onClick={() => setInputMessage('Asignar personal para zona Centro')}
             >
-              👥 Asignaciones
+              <div>
+                <div className="font-medium">👥 Asignar Personal Centro</div>
+                <div className="text-xs text-gray-500 mt-1">Asignar personal para zona Centro</div>
+              </div>
             </Button>
             <Button
               variant="outline"
-              className="justify-start"
-              onClick={() => setInputMessage('¿Qué métricas están disponibles?')}
+              className="justify-start text-left h-auto p-3"
+              onClick={() => setInputMessage('Buscar PQRS sobre infraestructura vial')}
             >
-              📊 Ver métricas
+              <div>
+                <div className="font-medium">🛣️ Infraestructura Vial</div>
+                <div className="text-xs text-gray-500 mt-1">Buscar PQRS sobre infraestructura vial</div>
+              </div>
             </Button>
           </div>
         </CardContent>

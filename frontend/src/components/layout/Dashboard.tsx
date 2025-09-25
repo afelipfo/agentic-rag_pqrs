@@ -1,10 +1,22 @@
-import { useState } from 'react'
-import { Search, Users, BarChart3, MessageSquare, Menu, X } from 'lucide-react'
+import { useState, Suspense, lazy } from 'react'
+import { Search, Users, BarChart3, MessageSquare, Menu, X, Loader2 } from 'lucide-react'
 import { Button } from '../common/Button'
-import QueryModule from '../modules/QueryModule'
-import AssignmentModule from '../modules/AssignmentModule'
-import MetricsModule from '../modules/MetricsModule'
-import ChatWidget from '../common/ChatWidget'
+
+// Lazy loading de módulos para mejor performance
+const QueryModule = lazy(() => import('../modules/QueryModule'))
+const AssignmentModule = lazy(() => import('../modules/AssignmentModule'))
+const MetricsModule = lazy(() => import('../modules/MetricsModule'))
+const ChatWidget = lazy(() => import('../common/ChatWidget'))
+
+// Componente de loading para lazy loading
+const ModuleLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="text-center">
+      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+      <p className="text-gray-600">Cargando módulo...</p>
+    </div>
+  </div>
+)
 
 type ModuleType = 'query' | 'assignment' | 'metrics' | 'chat'
 
@@ -22,6 +34,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip Links for Accessibility */}
+      <a href="#main-content" className="skip-link">
+        Saltar al contenido principal
+      </a>
+      <a href="#navigation" className="skip-link">
+        Saltar a la navegación
+      </a>
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 py-3 lg:px-6">
         <div className="flex items-center justify-between">
@@ -57,7 +77,12 @@ const Dashboard = () => {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:pt-16 bg-white border-r border-gray-200">
+        <aside
+          id="navigation"
+          className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 lg:pt-16 bg-white border-r border-gray-200"
+          role="navigation"
+          aria-label="Navegación principal"
+        >
           <nav className="flex-1 px-4 py-6 space-y-2">
             {modules.map((module) => {
               const Icon = module.icon
@@ -117,9 +142,11 @@ const Dashboard = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:ml-64">
+        <main id="main-content" className="flex-1 p-6 lg:ml-64" role="main">
           <div className="max-w-7xl mx-auto">
-            <ActiveComponent />
+            <Suspense fallback={<ModuleLoader />}>
+              <ActiveComponent />
+            </Suspense>
           </div>
         </main>
       </div>

@@ -90,6 +90,13 @@ const MapComponent = ({
         zoom={12}
         style={{ height: '100%', width: '100%' }}
         className="z-0"
+        // Optimizaciones para mobile
+        zoomControl={true}
+        scrollWheelZoom={false} // Deshabilitar zoom con scroll en mobile para mejor UX
+        doubleClickZoom={true}
+        boxZoom={false}
+        touchZoom={true}
+        dragging={true}
       >
         <MapController />
         <TileLayer
@@ -177,25 +184,29 @@ const MapComponent = ({
         })}
       </MapContainer>
 
-      {/* Leyenda */}
-      <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-lg border z-[1000]">
-        <h4 className="font-semibold text-sm mb-2">Actividad PQRS</h4>
+      {/* Leyenda - Responsive */}
+      <div className="absolute top-4 right-4 bg-white p-2 md:p-3 rounded-lg shadow-lg border z-[1000] max-w-[140px] md:max-w-none">
+        <h4 className="font-semibold text-xs md:text-sm mb-2">Actividad PQRS</h4>
         <div className="space-y-1 text-xs">
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
-            <span>{'Alta (>30%)'}</span>
+            <div className="w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded mr-2"></div>
+            <span className="hidden md:inline">{'Alta (>30%)'}</span>
+            <span className="md:hidden">Alta</span>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
-            <span>Media (15-30%)</span>
+            <div className="w-3 h-3 md:w-4 md:h-4 bg-yellow-500 rounded mr-2"></div>
+            <span className="hidden md:inline">Media (15-30%)</span>
+            <span className="md:hidden">Media</span>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
-            <span>{'Baja (<15%)'}</span>
+            <div className="w-3 h-3 md:w-4 md:h-4 bg-green-500 rounded mr-2"></div>
+            <span className="hidden md:inline">{'Baja (<15%)'}</span>
+            <span className="md:hidden">Baja</span>
           </div>
           <div className="flex items-center">
-            <div className="w-4 h-4 bg-blue-500 rounded mr-2 border-2 border-blue-700"></div>
-            <span>Seleccionada</span>
+            <div className="w-3 h-3 md:w-4 md:h-4 bg-blue-500 rounded mr-2 border-2 border-blue-700"></div>
+            <span className="hidden md:inline">Seleccionada</span>
+            <span className="md:hidden">Sel.</span>
           </div>
         </div>
       </div>
