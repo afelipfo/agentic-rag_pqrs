@@ -1,0 +1,334 @@
+import { useState } from 'react'
+import { Search, Filter, MapPin, Calendar, User, Phone, Mail, Eye } from 'lucide-react'
+import { Button } from '../common/Button'
+import { Input } from '../common/Input'
+import { Card, CardContent, CardHeader, CardTitle } from '../common/Card'
+import { Badge } from '../common/Badge'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../common/Collapsible'
+
+interface PQRSRecord {
+  numero_radicado_entrada: string
+  estado: string
+  asunto?: string
+  direccion_hecho?: string
+  barrio_hecho?: string
+  comuna_hecho?: string
+  nombre_peticionario?: string
+  telefono_peticionario?: string
+  correo_peticionario?: string
+  tipo_solicitud?: string
+  tema_principal?: string
+  fecha_radicacion?: string
+  dias_transcurridos?: number
+  unidad_responsable?: string
+  fecha_vencimiento?: string
+}
+
+const QueryModule = () => {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchType, setSearchType] = useState<'semantic' | 'radicado'>('semantic')
+  const [filters, setFilters] = useState({
+    estado: '',
+    comuna: '',
+    tipo_solicitud: '',
+    fecha_desde: '',
+    fecha_hasta: ''
+  })
+  const [results, setResults] = useState<PQRSRecord[]>([])
+  const [loading, setLoading] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return
+
+    setLoading(true)
+    try {
+      // Simulate API call - replace with actual API integration
+      const mockResults: PQRSRecord[] = [
+        {
+          numero_radicado_entrada: '201810000503',
+          estado: 'activo',
+          asunto: 'Problema con alumbrado público en Calle 45',
+          direccion_hecho: 'Calle 45 #23-10',
+          barrio_hecho: 'El Poblado',
+          comuna_hecho: 'Comuna 14',
+          nombre_peticionario: 'Juan Pérez',
+          telefono_peticionario: '3001234567',
+          correo_peticionario: 'juan.perez@email.com',
+          tipo_solicitud: 'Petición',
+          tema_principal: 'Alumbrado público',
+          fecha_radicacion: '2024-03-15',
+          dias_transcurridos: 45,
+          unidad_responsable: 'Secretaría de Infraestructura',
+          fecha_vencimiento: '2024-04-15'
+        }
+      ]
+
+      // Filter results based on search criteria
+      let filteredResults = mockResults
+
+      if (filters.estado) {
+        filteredResults = filteredResults.filter(r => r.estado === filters.estado)
+      }
+
+      if (filters.comuna) {
+        filteredResults = filteredResults.filter(r =>
+          r.comuna_hecho?.toLowerCase().includes(filters.comuna.toLowerCase())
+        )
+      }
+
+      setResults(filteredResults)
+    } catch (error) {
+      console.error('Search error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getStatusColor = (estado: string) => {
+    switch (estado.toLowerCase()) {
+      case 'activo':
+      case 'en proceso':
+        return 'bg-gov-green text-white'
+      case 'cerrado':
+      case 'finalizado':
+        return 'bg-gov-blue text-white'
+      case 'pendiente':
+        return 'bg-yellow-500 text-white'
+      default:
+        return 'bg-gray-500 text-white'
+    }
+  }
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A'
+    return new Date(dateString).toLocaleDateString('es-CO')
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          Consultas Inteligentes PQRS
+        </h1>
+        <p className="text-muted-foreground">
+          Busca peticiones, quejas, reclamos y sugerencias por radicado o contenido
+        </p>
+      </div>
+
+      {/* Search Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Búsqueda de PQRS
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Search Type Selector */}
+          <div className="flex gap-2">
+            <Button
+              variant={searchType === 'radicado' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSearchType('radicado')}
+            >
+              Por Radicado
+            </Button>
+            <Button
+              variant={searchType === 'semantic' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSearchType('semantic')}
+            >
+              Búsqueda Inteligente
+            </Button>
+          </div>
+
+          {/* Search Input */}
+          <div className="flex gap-2">
+            <Input
+              placeholder={
+                searchType === 'radicado'
+                  ? "Ingresa el número de radicado (ej: 201810000503)"
+                  : "Describe tu búsqueda (ej: problemas con vías, alumbrado público)"
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              className="flex-1"
+            />
+            <Button onClick={handleSearch} disabled={loading}>
+              {loading ? 'Buscando...' : 'Buscar'}
+            </Button>
+          </div>
+
+          {/* Advanced Filters */}
+          <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" className="w-full">
+                <Filter className="mr-2 h-4 w-4" />
+                Filtros Avanzados
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Estado</label>
+                  <select
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-md bg-background"
+                    value={filters.estado}
+                    onChange={(e) => setFilters({...filters, estado: e.target.value})}
+                  >
+                    <option value="">Todos</option>
+                    <option value="activo">Activo</option>
+                    <option value="cerrado">Cerrado</option>
+                    <option value="en proceso">En Proceso</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Comuna</label>
+                  <select
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-md bg-background"
+                    value={filters.comuna}
+                    onChange={(e) => setFilters({...filters, comuna: e.target.value})}
+                  >
+                    <option value="">Todas</option>
+                    <option value="Comuna 1">Comuna 1 - Popular</option>
+                    <option value="Comuna 14">Comuna 14 - El Poblado</option>
+                    {/* Add more comunas */}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Tipo de Solicitud</label>
+                  <select
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-md bg-background"
+                    value={filters.tipo_solicitud}
+                    onChange={(e) => setFilters({...filters, tipo_solicitud: e.target.value})}
+                  >
+                    <option value="">Todos</option>
+                    <option value="Petición">Petición</option>
+                    <option value="Queja">Queja</option>
+                    <option value="Reclamo">Reclamo</option>
+                    <option value="Sugerencia">Sugerencia</option>
+                  </select>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </CardContent>
+      </Card>
+
+      {/* Results Section */}
+      {results.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Resultados de Búsqueda ({results.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {results.map((record) => (
+                <Card key={record.numero_radicado_entrada} className="border-l-4 border-l-gov-blue">
+                  <CardContent className="pt-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          Radicado: {record.numero_radicado_entrada}
+                        </h3>
+                        <Badge className={getStatusColor(record.estado)}>
+                          {record.estado.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Eye className="mr-2 h-4 w-4" />
+                        Ver Detalles
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span>{record.direccion_hecho || 'Dirección no especificada'}</span>
+                        </div>
+                        <div className="text-muted-foreground">
+                          {record.barrio_hecho && `${record.barrio_hecho}, `}
+                          {record.comuna_hecho}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span>{record.nombre_peticionario || 'No especificado'}</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-muted-foreground">
+                          {record.telefono_peticionario && (
+                            <div className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              <span className="text-xs">{record.telefono_peticionario}</span>
+                            </div>
+                          )}
+                          {record.correo_peticionario && (
+                            <div className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              <span className="text-xs">{record.correo_peticionario}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Tipo:</span>
+                          <div className="font-medium">{record.tipo_solicitud || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Tema:</span>
+                          <div className="font-medium">{record.tema_principal || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Radicación:</span>
+                          <div className="font-medium">{formatDate(record.fecha_radicacion)}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Días transcurridos:</span>
+                          <div className="font-medium">{record.dias_transcurridos || 0}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {record.asunto && (
+                      <div className="mt-4">
+                        <span className="text-muted-foreground">Asunto:</span>
+                        <p className="mt-1 text-sm">{record.asunto}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Results */}
+      {searchQuery && !loading && results.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No se encontraron resultados</h3>
+            <p className="text-muted-foreground">
+              Intenta con diferentes términos de búsqueda o ajusta los filtros.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+export default QueryModule
