@@ -1,10 +1,33 @@
 import * as React from "react"
-import * as CollapsiblePrimitive from "@radix-ui/react-collapsible"
 
-const Collapsible = CollapsiblePrimitive.Root
+interface CollapsibleProps {
+  children: React.ReactNode
+  className?: string
+}
 
-const CollapsibleTrigger = CollapsiblePrimitive.CollapsibleTrigger
+interface CollapsibleTriggerProps {
+  children: React.ReactNode
+  className?: string
+  onClick?: () => void
+}
 
-const CollapsibleContent = CollapsiblePrimitive.CollapsibleContent
+interface CollapsibleContentProps {
+  children: React.ReactNode
+  className?: string
+}
+
+const Collapsible: React.FC<CollapsibleProps> = ({ children, className }) => (
+  <div className={className}>{children}</div>
+)
+
+const CollapsibleTrigger: React.FC<CollapsibleTriggerProps> = ({ children, className, onClick }) => (
+  <button className={className} onClick={onClick}>
+    {children}
+  </button>
+)
+
+const CollapsibleContent: React.FC<CollapsibleContentProps> = ({ children, className }) => (
+  <div className={className}>{children}</div>
+)
 
 export { Collapsible, CollapsibleTrigger, CollapsibleContent }

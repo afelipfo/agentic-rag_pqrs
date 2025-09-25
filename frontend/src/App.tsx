@@ -1,15 +1,24 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'
 import Dashboard from './components/layout/Dashboard'
+import LandingPage from './components/layout/LandingPage'
+
+function AppContent() {
+  const navigate = useNavigate()
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Routes>
+        <Route path="/" element={<LandingPage onEnterDashboard={() => navigate('/dashboard')} />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </div>
+  )
+}
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-background">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </div>
+      <AppContent />
     </Router>
   )
 }

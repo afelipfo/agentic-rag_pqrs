@@ -1,28 +1,12 @@
 import { useState } from 'react'
-import { Search, Filter, MapPin, Calendar, User, Phone, Mail, Eye } from 'lucide-react'
+import { Search, Filter, MapPin, User, Phone, Mail, Eye, Loader2 } from 'lucide-react'
 import { Button } from '../common/Button'
 import { Input } from '../common/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '../common/Card'
 import { Badge } from '../common/Badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../common/Collapsible'
-
-interface PQRSRecord {
-  numero_radicado_entrada: string
-  estado: string
-  asunto?: string
-  direccion_hecho?: string
-  barrio_hecho?: string
-  comuna_hecho?: string
-  nombre_peticionario?: string
-  telefono_peticionario?: string
-  correo_peticionario?: string
-  tipo_solicitud?: string
-  tema_principal?: string
-  fecha_radicacion?: string
-  dias_transcurridos?: number
-  unidad_responsable?: string
-  fecha_vencimiento?: string
-}
+import SearchBar from '../common/SearchBar'
+import { apiService, type PQRSRecord } from '../../services/api'
 
 const QueryModule = () => {
   const [searchQuery, setSearchQuery] = useState('')
@@ -37,49 +21,44 @@ const QueryModule = () => {
   const [results, setResults] = useState<PQRSRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
+
+  const toggleExpanded = (radicado: string) => {
+    const newExpanded = new Set(expandedItems)
+    if (newExpanded.has(radicado)) {
+      newExpanded.delete(radicado)
+    } else {
+      newExpanded.add(radicado)
+    }
+    setExpandedItems(newExpanded)
+  }
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return
 
     setLoading(true)
     try {
-      // Simulate API call - replace with actual API integration
-      const mockResults: PQRSRecord[] = [
-        {
-          numero_radicado_entrada: '201810000503',
-          estado: 'activo',
-          asunto: 'Problema con alumbrado público en Calle 45',
-          direccion_hecho: 'Calle 45 #23-10',
-          barrio_hecho: 'El Poblado',
-          comuna_hecho: 'Comuna 14',
-          nombre_peticionario: 'Juan Pérez',
-          telefono_peticionario: '3001234567',
-          correo_peticionario: 'juan.perez@email.com',
-          tipo_solicitud: 'Petición',
-          tema_principal: 'Alumbrado público',
-          fecha_radicacion: '2024-03-15',
-          dias_transcurridos: 45,
-          unidad_responsable: 'Secretaría de Infraestructura',
-          fecha_vencimiento: '2024-04-15'
-        }
-      ]
-
-      // Filter results based on search criteria
-      let filteredResults = mockResults
-
-      if (filters.estado) {
-        filteredResults = filteredResults.filter(r => r.estado === filters.estado)
+      const requestData = {
+        query: searchQuery.trim(),
+        query_type: searchType,
+        filters: Object.fromEntries(
+          Object.entries(filters).filter(([_, value]) => value !== '')
+        ),
+        limit: 20
       }
 
-      if (filters.comuna) {
-        filteredResults = filteredResults.filter(r =>
-          r.comuna_hecho?.toLowerCase().includes(filters.comuna.toLowerCase())
-        )
-      }
-
-      setResults(filteredResults)
+      const response = await apiService.searchPQRS(requestData)
+      setResults(response.results)
     } catch (error) {
       console.error('Search error:', error)
+      // Fallback to mock data if API is not available
+      setResults([{
+        numero_radicado_entrada: 'API_NO_DISPONIBLE',
+        estado: 'error',
+        asunto: 'Error de conexión con el backend. Verifique que el servidor esté ejecutándose.',
+        tipo_solicitud: 'Error',
+        fecha_radicacion: new Date().toISOString().split('T')[0]
+      }])
     } finally {
       setLoading(false)
     }
@@ -144,23 +123,22 @@ const QueryModule = () => {
             </Button>
           </div>
 
-          {/* Search Input */}
-          <div className="flex gap-2">
-            <Input
-              placeholder={
-                searchType === 'radicado'
-                  ? "Ingresa el número de radicado (ej: 201810000503)"
-                  : "Describe tu búsqueda (ej: problemas con vías, alumbrado público)"
-              }
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="flex-1"
-            />
-            <Button onClick={handleSearch} disabled={loading}>
-              {loading ? 'Buscando...' : 'Buscar'}
-            </Button>
-          </div>
+          {/* Search Input with Auto-complete */}
+          <SearchBar
+            placeholder={
+              searchType === 'radicado'
+                ? "Ingresa el número de radicado (ej: 201810000503)"
+                : "Describe tu búsqueda (ej: problemas con vías, alumbrado público)"
+            }
+            onSearch={(query) => {
+              setSearchQuery(query)
+              handleSearch()
+            }}
+            onClear={() => setSearchQuery('')}
+            recentSearches={['alumbrado público', 'problemas vías', 'PQRS 201810000503']}
+            popularSearches={['alumbrado', 'vías', 'transporte', 'agua']}
+            className="mb-4"
+          />
 
           {/* Advanced Filters */}
           <Collapsible open={showFilters} onOpenChange={setShowFilters}>
@@ -240,9 +218,13 @@ const QueryModule = () => {
                           {record.estado.toUpperCase()}
                         </Badge>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleExpanded(record.numero_radicado_entrada)}
+                      >
                         <Eye className="mr-2 h-4 w-4" />
-                        Ver Detalles
+                        {expandedItems.has(record.numero_radicado_entrada) ? 'Ocultar' : 'Ver'} Detalles
                       </Button>
                     </div>
 
@@ -305,6 +287,55 @@ const QueryModule = () => {
                       <div className="mt-4">
                         <span className="text-muted-foreground">Asunto:</span>
                         <p className="mt-1 text-sm">{record.asunto}</p>
+                      </div>
+                    )}
+
+                    {/* Expanded Details */}
+                    {expandedItems.has(record.numero_radicado_entrada) && (
+                      <div className="mt-4 pt-4 border-t border-border space-y-3">
+                        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">
+                          Información Detallada
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div className="space-y-2">
+                            <div>
+                              <span className="text-muted-foreground">Número de Radicado de Respuesta:</span>
+                              <div className="font-medium">{record.numero_radicado_respuesta || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Fecha de Entrada al SIF:</span>
+                              <div className="font-medium">{formatDate(record.fecha_entrada_sif)}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Fecha de Radicado de Respuesta:</span>
+                              <div className="font-medium">{formatDate(record.fecha_radicado_respuesta)}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Fecha de Vencimiento:</span>
+                              <div className="font-medium">{formatDate(record.fecha_vencimiento)}</div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div>
+                              <span className="text-muted-foreground">Unidad Responsable:</span>
+                              <div className="font-medium">{record.unidad_responsable || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Sistema de Información:</span>
+                              <div className="font-medium">{record.sistema_informacion || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Mes/Año:</span>
+                              <div className="font-medium">{record.mes || 'N/A'}/{record.ano || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Prórroga:</span>
+                              <div className="font-medium">{record.prorroga || 'N/A'}</div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </CardContent>
