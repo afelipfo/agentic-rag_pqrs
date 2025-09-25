@@ -23,6 +23,8 @@ const AssignmentModule = () => {
   const [error, setError] = useState('')
   const [selectedZone, setSelectedZone] = useState<string>('')
   const [showCalendar, setShowCalendar] = useState(false)
+  const [calendarView, setCalendarView] = useState<'week' | 'month'>('week')
+  const [selectedDate, setSelectedDate] = useState(new Date())
 
   // Mock data for zones - in real implementation this would come from API
   const [zones] = useState<ZoneData[]>([
@@ -424,6 +426,271 @@ const AssignmentModule = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Calendar View */}
+      {showCalendar && (
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Calendario de Asignaciones
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant={calendarView === 'week' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCalendarView('week')}
+                >
+                  Semana
+                </Button>
+                <Button
+                  variant={calendarView === 'month' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCalendarView('month')}
+                >
+                  Mes
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Week View */}
+              {calendarView === 'week' && (
+                <div className="grid grid-cols-7 gap-2">
+                  {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day, index) => {
+                    const date = new Date(selectedDate)
+                    date.setDate(selectedDate.getDate() - selectedDate.getDay() + index + 1)
+                    const isToday = date.toDateString() === new Date().toDateString()
+
+                    // Mock assignments for demonstration
+                    const dayAssignments = Math.floor(Math.random() * 5) + 1
+
+                    return (
+                      <div
+                        key={day}
+                        className={`p-3 border rounded-lg text-center cursor-pointer transition-colors ${
+                          isToday ? 'bg-blue-50 border-blue-300' : 'hover:bg-gray-50'
+                        }`}
+                        onClick={() => setSelectedDate(date)}
+                      >
+                        <div className="text-sm font-medium text-gray-900">{day}</div>
+                        <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                          {date.getDate()}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {dayAssignments} asignaciones
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Month View */}
+              {calendarView === 'month' && (
+                <div className="grid grid-cols-7 gap-1">
+                  {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(day => (
+                    <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                      {day}
+                    </div>
+                  ))}
+                  {/* Calendar days would go here - simplified for demo */}
+                  {Array.from({ length: 35 }, (_, i) => {
+                    const dayNumber = i - 3 // Offset to start calendar properly
+                    const isCurrentMonth = dayNumber >= 1 && dayNumber <= 31
+                    const assignments = isCurrentMonth ? Math.floor(Math.random() * 4) : 0
+
+                    return (
+                      <div
+                        key={i}
+                        className={`p-2 text-center text-sm border rounded ${
+                          isCurrentMonth ? 'cursor-pointer hover:bg-gray-50' : 'text-gray-300'
+                        }`}
+                      >
+                        {isCurrentMonth && (
+                          <>
+                            <div>{dayNumber}</div>
+                            {assignments > 0 && (
+                              <div className="text-xs text-blue-600 font-medium">
+                                {assignments}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Selected Date Details */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-3">
+                  Asignaciones para {selectedDate.toLocaleDateString('es-CO', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </h4>
+
+                {/* Mock assignments for selected date */}
+                <div className="space-y-3">
+                  {[
+                    { time: '08:00', pqrs: 'PQRS-001', zone: 'Popular', personnel: 'Juan Pérez', vehicle: 'VEH-001' },
+                    { time: '10:30', pqrs: 'PQRS-002', zone: 'El Poblado', personnel: 'María García', vehicle: 'VEH-002' },
+                    { time: '14:00', pqrs: 'PQRS-003', zone: 'Laureles', personnel: 'Carlos Rodríguez', vehicle: 'VEH-003' }
+                  ].map((assignment, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
+                      <div className="flex items-center space-x-3">
+                        <div className="text-sm font-medium text-blue-600">{assignment.time}</div>
+                        <div>
+                          <div className="font-medium">{assignment.pqrs}</div>
+                          <div className="text-sm text-gray-500">{assignment.zone}</div>
+                        </div>
+                      </div>
+                      <div className="text-right text-sm">
+                        <div>{assignment.personnel}</div>
+                        <div className="text-gray-500">{assignment.vehicle}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Optimized Routes */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Rutas Optimizadas del Día
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Route 1 */}
+            <div className="border rounded-lg p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h4 className="font-medium text-gray-900">Ruta Norte - Popular</h4>
+                  <p className="text-sm text-gray-500">Personal: Juan Pérez • Vehículo: VEH-001</p>
+                </div>
+                <Badge className="bg-green-100 text-green-800">En progreso</Badge>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="font-medium">08:00</span>
+                  <span>Inicio ruta - Calle 45 #23-10</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="font-medium">08:30</span>
+                  <span>PQRS-001 - Problema alumbrado público</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span className="font-medium">09:15</span>
+                  <span>PQRS-002 - Reparación vía</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="font-medium">10:00</span>
+                  <span>Fin ruta estimado</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex justify-between text-sm text-gray-600">
+                <span>Distancia total: 12.5 km</span>
+                <span>Tiempo estimado: 2h 15min</span>
+                <span>3 PQRS asignadas</span>
+              </div>
+            </div>
+
+            {/* Route 2 */}
+            <div className="border rounded-lg p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h4 className="font-medium text-gray-900">Ruta Centro - La Candelaria</h4>
+                  <p className="text-sm text-gray-500">Personal: María García • Vehículo: VEH-002</p>
+                </div>
+                <Badge className="bg-blue-100 text-blue-800">Programada</Badge>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="font-medium">09:00</span>
+                  <span>Inicio ruta - Parque de los Deseos</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span className="font-medium">09:45</span>
+                  <span>PQRS-004 - Mantenimiento infraestructura</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                  <span className="font-medium">11:00</span>
+                  <span>PQRS-005 - Señalización vial</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <span className="font-medium">12:30</span>
+                  <span>Fin ruta estimado</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex justify-between text-sm text-gray-600">
+                <span>Distancia total: 8.3 km</span>
+                <span>Tiempo estimado: 3h 30min</span>
+                <span>2 PQRS asignadas</span>
+              </div>
+            </div>
+
+            {/* Route 3 */}
+            <div className="border rounded-lg p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h4 className="font-medium text-gray-900">Ruta Sur - Manrique</h4>
+                  <p className="text-sm text-gray-500">Personal: Carlos Rodríguez • Vehículo: VEH-003</p>
+                </div>
+                <Badge className="bg-gray-100 text-gray-800">Pendiente</Badge>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <span className="font-medium">14:00</span>
+                  <span>Inicio ruta - Avenida Regional</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <span className="font-medium">15:30</span>
+                  <span>PQRS-006 - Drenaje pluvial</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <span className="font-medium">17:00</span>
+                  <span>Fin ruta estimado</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex justify-between text-sm text-gray-600">
+                <span>Distancia total: 6.1 km</span>
+                <span>Tiempo estimado: 3h 00min</span>
+                <span>1 PQRS asignada</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Instructions */}
       <Card>

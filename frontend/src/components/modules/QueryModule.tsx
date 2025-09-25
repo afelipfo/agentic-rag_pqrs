@@ -171,10 +171,23 @@ const QueryModule = () => {
                     value={filters.comuna}
                     onChange={(e) => setFilters({...filters, comuna: e.target.value})}
                   >
-                    <option value="">Todas</option>
+                    <option value="">Todas las Comunas</option>
                     <option value="Comuna 1">Comuna 1 - Popular</option>
+                    <option value="Comuna 2">Comuna 2 - Santa Cruz</option>
+                    <option value="Comuna 3">Comuna 3 - Manrique</option>
+                    <option value="Comuna 4">Comuna 4 - Aranjuez</option>
+                    <option value="Comuna 5">Comuna 5 - Castilla</option>
+                    <option value="Comuna 6">Comuna 6 - Doce de Octubre</option>
+                    <option value="Comuna 7">Comuna 7 - Robledo</option>
+                    <option value="Comuna 8">Comuna 8 - Villa Hermosa</option>
+                    <option value="Comuna 9">Comuna 9 - Buenos Aires</option>
+                    <option value="Comuna 10">Comuna 10 - La Candelaria</option>
+                    <option value="Comuna 11">Comuna 11 - Laureles-Estadio</option>
+                    <option value="Comuna 12">Comuna 12 - La América</option>
+                    <option value="Comuna 13">Comuna 13 - San Javier</option>
                     <option value="Comuna 14">Comuna 14 - El Poblado</option>
-                    {/* Add more comunas */}
+                    <option value="Comuna 15">Comuna 15 - Guayabal</option>
+                    <option value="Comuna 16">Comuna 16 - Belén</option>
                   </select>
                 </div>
 
