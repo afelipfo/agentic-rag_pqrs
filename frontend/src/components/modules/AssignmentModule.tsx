@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Users, MapPin, Truck, CheckCircle, Clock, AlertCircle, Calendar, Target } from 'lucide-react'
+import { Users, MapPin, Truck, CheckCircle, Clock, AlertCircle, Calendar, Target, GripVertical } from 'lucide-react'
 import { Button } from '../common/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '../common/Card'
 import { Badge } from '../common/Badge'
@@ -274,6 +274,111 @@ const AssignmentModule = () => {
               >
                 {loading ? 'Procesando...' : 'Asignar Manualmente'}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Drag & Drop Assignment */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <GripVertical className="h-5 w-5" />
+                Asignación por Drag & Drop
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Arrastra PQRS a personal disponible para asignaciones rápidas.
+              </p>
+
+              {/* Available PQRS */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">PQRS Disponibles</h4>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {[
+                    { id: 'PQRS-001', title: 'Alumbrado público Calle 45', zone: 'Popular' },
+                    { id: 'PQRS-002', title: 'Reparación vía Carrera 80', zone: 'El Poblado' },
+                    { id: 'PQRS-003', title: 'Drenaje pluvial', zone: 'Laureles' },
+                    { id: 'PQRS-004', title: 'Señalización vial', zone: 'La Candelaria' }
+                  ].map((pqrs) => (
+                    <div
+                      key={pqrs.id}
+                      draggable
+                      onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify(pqrs))}
+                      className="p-2 bg-blue-50 border border-blue-200 rounded cursor-move hover:bg-blue-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-3 w-3 text-blue-500" />
+                        <div className="text-xs">
+                          <div className="font-medium">{pqrs.id}</div>
+                          <div className="text-gray-600 truncate">{pqrs.title}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Available Personnel */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Personal Disponible</h4>
+                <div className="space-y-2">
+                  {[
+                    { id: 'EMP001', name: 'Juan Pérez', role: 'Técnico', zone: 'Popular' },
+                    { id: 'EMP002', name: 'María García', role: 'Ingeniera', zone: 'El Poblado' },
+                    { id: 'EMP003', name: 'Carlos Rodríguez', role: 'Supervisor', zone: 'Laureles' }
+                  ].map((person) => (
+                    <div
+                      key={person.id}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        const pqrsData = JSON.parse(e.dataTransfer.getData('text/plain'))
+                        alert(`Asignando ${pqrsData.id} a ${person.name}`)
+                      }}
+                      className="p-3 border-2 border-dashed border-gray-300 rounded hover:border-green-400 hover:bg-green-50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-sm">{person.name}</div>
+                          <div className="text-xs text-gray-500">{person.role} • {person.zone}</div>
+                        </div>
+                        <Users className="h-4 w-4 text-gray-400" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Available Vehicles */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Vehículos Disponibles</h4>
+                <div className="space-y-2">
+                  {[
+                    { id: 'VEH001', type: 'Camioneta', zone: 'Popular' },
+                    { id: 'VEH002', type: 'Motocicleta', zone: 'El Poblado' },
+                    { id: 'VEH003', type: 'Furgón', zone: 'Laureles' }
+                  ].map((vehicle) => (
+                    <div
+                      key={vehicle.id}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        const pqrsData = JSON.parse(e.dataTransfer.getData('text/plain'))
+                        alert(`Asignando vehículo ${vehicle.id} al PQRS ${pqrsData.id}`)
+                      }}
+                      className="p-3 border-2 border-dashed border-gray-300 rounded hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-sm">{vehicle.id}</div>
+                          <div className="text-xs text-gray-500">{vehicle.type} • {vehicle.zone}</div>
+                        </div>
+                        <Truck className="h-4 w-4 text-gray-400" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </CardContent>
           </Card>
 

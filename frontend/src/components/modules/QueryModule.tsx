@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Filter, MapPin, User, Phone, Mail, Eye, Loader2 } from 'lucide-react'
+import { Search, Filter, MapPin, User, Phone, Mail, Eye, Loader2, Download, MessageCircle } from 'lucide-react'
 import { Button } from '../common/Button'
 import { Input } from '../common/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '../common/Card'
@@ -82,6 +82,37 @@ const QueryModule = () => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleDateString('es-CO')
+  }
+
+  const handleDownloadPDF = async (radicado: string) => {
+    try {
+      // In a real implementation, this would call an API to generate and download a PDF
+      alert(`Descargando PDF para el radicado ${radicado}...`)
+      // Example: window.open(`/api/pqrs/${radicado}/pdf`, '_blank')
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+      alert('Error al descargar el PDF. Intente nuevamente.')
+    }
+  }
+
+  const handleContact = (record: PQRSRecord) => {
+    // In a real implementation, this would open a contact form or modal
+    const contactInfo = record.unidad_responsable || 'Secretaría de Infraestructura Física'
+    const message = `Hola, me gustaría hacer seguimiento al PQRS ${record.numero_radicado_entrada} sobre: ${record.asunto || 'Sin asunto especificado'}`
+
+    // For demo purposes, we'll use WhatsApp or email
+    if (record.telefono_peticionario) {
+      // Try WhatsApp
+      const whatsappUrl = `https://wa.me/57${record.telefono_peticionario.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`
+      window.open(whatsappUrl, '_blank')
+    } else if (record.correo_peticionario) {
+      // Try email
+      const emailUrl = `mailto:${record.correo_peticionario}?subject=Seguimiento PQRS ${record.numero_radicado_entrada}&body=${encodeURIComponent(message)}`
+      window.location.href = emailUrl
+    } else {
+      // Fallback to general contact
+      alert(`Para contactar sobre este PQRS, comuníquese con: ${contactInfo}`)
+    }
   }
 
   return (
@@ -231,14 +262,32 @@ const QueryModule = () => {
                           {record.estado.toUpperCase()}
                         </Badge>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleExpanded(record.numero_radicado_entrada)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        {expandedItems.has(record.numero_radicado_entrada) ? 'Ocultar' : 'Ver'} Detalles
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleExpanded(record.numero_radicado_entrada)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          {expandedItems.has(record.numero_radicado_entrada) ? 'Ocultar' : 'Ver'} Detalles
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadPDF(record.numero_radicado_entrada)}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          PDF
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleContact(record)}
+                        >
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          Contactar
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
